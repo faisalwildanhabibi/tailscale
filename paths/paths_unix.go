@@ -24,6 +24,9 @@ func statePath() string {
 	if runtime.GOOS == "linux" && distro.Get() == distro.JetKVM {
 		return "/userdata/tailscale/var/tailscaled.state"
 	}
+	if runtime.GOOS == "linux" && distro.Get() == distro.Android {
+		return "/data/adb/tailscale/state/tailscaled.state"
+	}
 	switch runtime.GOOS {
 	case "linux", "illumos", "solaris":
 		return "/var/lib/tailscale/tailscaled.state"
@@ -41,6 +44,9 @@ func statePath() string {
 func stateFileUnix() string {
 	if distro.Get() == distro.Gokrazy {
 		return "/perm/tailscaled/tailscaled.state"
+	}
+	if distro.Get() == distro.Android {
+		return "/data/adb/tailscale/state/tailscaled.state"
 	}
 	path := statePath()
 	if path == "" {
@@ -72,7 +78,7 @@ func xdgDataHome() string {
 }
 
 func ensureStateDirPermsUnix(dir string) error {
-	if filepath.Base(dir) != "tailscale" {
+	if filepath.Base(dir) != "tailscale" && filepath.Base(dir) != "state" {
 		return nil
 	}
 	fi, err := os.Stat(dir)
