@@ -20,21 +20,6 @@ func init() {
 	}
 }
 
-const (
-	androidServiceDir    = "/data/adb/service.d"
-	androidServiceScript = "/data/adb/service.d/tailscaled.sh"
-	androidLegacyLink    = "/data/adb/service.d/tailscaled"
-	androidTargetBin     = "/data/adb/tailscale/tailscaled"
-)
-
-const androidBootScriptContent = `#!/system/bin/sh
-until [ "$(getprop sys.boot_completed)" = "1" ]; do
-	sleep 2
-done
-sleep 3
-exec /data/adb/tailscale/tailscaled
-`
-
 func installSystemDaemonAndroid(args []string) error {
 	if len(args) > 0 {
 		return errors.New("install-system-daemon takes no arguments")

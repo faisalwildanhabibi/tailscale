@@ -59,20 +59,40 @@ func initAndroidRootEnv() {
 	}
 }
 
-func ensureAndroidBootService() {
-	serviceDir := "/data/adb/service.d"
-	serviceScript := "/data/adb/service.d/tailscaled.sh"
-	legacyLink := "/data/adb/service.d/tailscaled"
-	targetBin := "/data/adb/tailscale/tailscaled"
+const (
+	androidServiceDir    = "/data/adb/service.d"
+	androidServiceScript = "/data/adb/service.d/tailscaled.sh"
+	androidLegacyLink    = "/data/adb/service.d/tailscaled"
+	androidTargetBin     = "/data/adb/tailscale/tailscaled"
+)
 
+const androidBootScriptContent = `#!/system/bin/sh
+
+if [ -x /system/bin/wait_for_prop ]; then
+	/system/bin/wait_for_prop sys.boot_completed 1
+else
+	until [ "$(getprop sys.boot_completed)" = "1" ]; do
+		sleep 1
+	done
+fi
+
+WAIT_COUNT=0
+until ip route get 8.8.8.8 >/dev/null 2>&1 || ip -6 route get 2001:4860:4860::8888 >/dev/null 2>&1 || [ "$WAIT_COUNT" -ge 30 ]; do
+	WAIT_COUNT=$((WAIT_COUNT + 1))
+	sleep 1
+done
+
+exec /data/adb/tailscale/tailscaled
+`
+
+func ensureAndroidBootService() {
 	if fi, err := os.Stat("/data/adb"); err == nil && fi.IsDir() {
-		_ = os.MkdirAll(serviceDir, 0755)
-		_ = os.Remove(legacyLink)
-		if _, err := os.Stat(serviceScript); os.IsNotExist(err) {
-			if _, err := os.Stat(targetBin); err == nil {
-				script := "#!/system/bin/sh\nuntil [ \"$(getprop sys.boot_completed)\" = \"1\" ]; do\n\tsleep 2\ndone\nsleep 3\nexec /data/adb/tailscale/tailscaled\n"
-				_ = os.WriteFile(serviceScript, []byte(script), 0755)
-				_ = os.Chmod(serviceScript, 0755)
+		_ = os.MkdirAll(androidServiceDir, 0755)
+		_ = os.Remove(androidLegacyLink)
+		if _, err := os.Stat(androidServiceScript); os.IsNotExist(err) {
+			if _, err := os.Stat(androidTargetBin); err == nil {
+				_ = os.WriteFile(androidServiceScript, []byte(androidBootScriptContent), 0755)
+				_ = os.Chmod(androidServiceScript, 0755)
 			}
 		}
 	}
