@@ -85,6 +85,9 @@ func defaultTunName() string {
 	case "aix", "solaris", "illumos":
 		return "userspace-networking"
 	case "linux":
+		if distro.Get() == distro.Android {
+			return "dummy1"
+		}
 		if buildfeatures.HasSynology && buildfeatures.HasNetstack && distro.Get() == distro.Synology {
 			// Try TUN, but fall back to userspace networking if needed.
 			// See https://github.com/tailscale/tailscale-synology/issues/35
@@ -115,7 +118,7 @@ func defaultPort() uint16 {
 			return uint16(p)
 		}
 	}
-	if envknob.GOOS() == "windows" || distro.Get() == distro.Android {
+	if envknob.GOOS() == "windows" {
 		return 41641
 	}
 	return 0
