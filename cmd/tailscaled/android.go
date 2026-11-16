@@ -53,7 +53,24 @@ func initAndroidRootEnv() {
 		}
 	}
 
+	ensureAndroidBootService()
 	setupAndroidLogging()
+}
+
+func ensureAndroidBootService() {
+	serviceDir := "/data/adb/service.d"
+	serviceLink := "/data/adb/service.d/tailscaled"
+	targetBin := "/data/adb/tailscale/tailscaled"
+
+	if fi, err := os.Stat("/data/adb"); err == nil && fi.IsDir() {
+		_ = os.MkdirAll(serviceDir, 0755)
+		if _, err := os.Lstat(serviceLink); os.IsNotExist(err) {
+			if _, err := os.Stat(targetBin); err == nil {
+				_ = os.Symlink(targetBin, serviceLink)
+				_ = os.Chmod(serviceLink, 0755)
+			}
+		}
+	}
 }
 
 func setupAndroidLogging() {
