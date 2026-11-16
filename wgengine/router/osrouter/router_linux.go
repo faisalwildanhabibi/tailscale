@@ -1923,12 +1923,7 @@ func normalizeCIDR(cidr netip.Prefix) string {
 // running iptables/nftables commands.
 func platformCanNetfilter() bool {
 	switch getDistroFunc() {
-	case distro.Synology:
-		// Synology doesn't support iptables or nftables. Attempting to run it
-		// just blocks for a long time while it logs about failures.
-		//
-		// See https://github.com/tailscale/tailscale/issues/11737 for one such
-		// prior regression where we tried to run iptables on Synology.
+	case distro.Synology, distro.Android:
 		return false
 	}
 	return true
@@ -1941,7 +1936,7 @@ func cleanUp(logf logger.Logf, interfaceName string) {
 	if interfaceName == "userspace-networking" {
 		return
 	}
-	if platformCanNetfilter() {
+	if platformCanNetfilter() || getDistroFunc() == distro.Android {
 		linuxfw.IPTablesCleanUp(logf)
 		linuxfw.NfTablesCleanUp(logf)
 	}
