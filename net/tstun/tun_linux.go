@@ -21,6 +21,16 @@ func init() {
 		_, err := modprobeTun()
 		return err
 	})
+	ensureAndroidTunNode()
+}
+
+func ensureAndroidTunNode() {
+	if _, err := os.Stat("/dev/net/tun"); os.IsNotExist(err) {
+		if _, err := os.Stat("/dev/tun"); err == nil {
+			_ = os.MkdirAll("/dev/net", 0755)
+			_ = os.Symlink("/dev/tun", "/dev/net/tun")
+		}
+	}
 }
 
 func modprobeTun() ([]byte, error) {
