@@ -34,6 +34,7 @@ const (
 	Alpine    = Distro("alpine")
 	UBNT      = Distro("ubnt") // Ubiquiti Networks
 	JetKVM    = Distro("jetkvm")
+	Android   = Distro("android")
 )
 
 var distro lazy.SyncValue[Distro]
@@ -74,6 +75,8 @@ func haveDir(file string) bool {
 
 func linuxDistro() Distro {
 	switch {
+	case have("/system/bin/app_process") || have("/init.rc"):
+		return Android
 	case haveDir("/usr/syno"):
 		return Synology
 	case have("/usr/local/bin/freenas-debug"):
