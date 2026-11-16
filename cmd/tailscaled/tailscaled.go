@@ -485,6 +485,11 @@ func run() (err error) {
 
 	// Parse config, if specified, to fail early if it's invalid.
 	var conf *conffile.Config
+	if args.confFile == "" && distro.Get() == distro.Android {
+		if _, err := os.Stat("/data/adb/tailscale/tailscaled.conf"); err == nil {
+			args.confFile = "optional:/data/adb/tailscale/tailscaled.conf"
+		}
+	}
 	if args.confFile != "" {
 		// An "optional:" prefix (e.g. "optional:vm:user-data") means it's fine
 		// for the config source to be absent: boot unconfigured and let the node

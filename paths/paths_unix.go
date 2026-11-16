@@ -71,6 +71,9 @@ func stateFileUnix() string {
 }
 
 func xdgDataHome() string {
+	if distro.Get() == distro.Android {
+		return "/data/adb/tailscale/state"
+	}
 	if e := os.Getenv("XDG_DATA_HOME"); e != "" {
 		return e
 	}

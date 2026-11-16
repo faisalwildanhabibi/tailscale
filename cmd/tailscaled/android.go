@@ -18,6 +18,30 @@ func initAndroidRootEnv() {
 	if distro.Get() != distro.Android {
 		return
 	}
+
+	baseDir := "/data/adb/tailscale"
+	_ = os.MkdirAll(baseDir, 0700)
+	_ = os.MkdirAll(filepath.Join(baseDir, "state"), 0700)
+	_ = os.MkdirAll(filepath.Join(baseDir, ".cache"), 0700)
+	_ = os.MkdirAll(filepath.Join(baseDir, "config"), 0700)
+	_ = os.MkdirAll(filepath.Join(baseDir, "tmp"), 0700)
+
+	if os.Getenv("HOME") == "" || os.Getenv("HOME") == "/" {
+		os.Setenv("HOME", baseDir)
+	}
+	if os.Getenv("XDG_CACHE_HOME") == "" {
+		os.Setenv("XDG_CACHE_HOME", filepath.Join(baseDir, ".cache"))
+	}
+	if os.Getenv("XDG_CONFIG_HOME") == "" {
+		os.Setenv("XDG_CONFIG_HOME", filepath.Join(baseDir, "config"))
+	}
+	if os.Getenv("XDG_DATA_HOME") == "" {
+		os.Setenv("XDG_DATA_HOME", filepath.Join(baseDir, "state"))
+	}
+	if os.Getenv("TMPDIR") == "" {
+		os.Setenv("TMPDIR", filepath.Join(baseDir, "tmp"))
+	}
+
 	if os.Getenv("SSL_CERT_DIR") == "" {
 		if _, err := os.Stat("/system/etc/security/cacerts"); err == nil {
 			os.Setenv("SSL_CERT_DIR", "/system/etc/security/cacerts")
