@@ -65,7 +65,7 @@ var (
 //
 // The health tracker may be nil; the knobs may be nil and are ignored on this platform.
 func NewOSConfigurator(logf logger.Logf, health *health.Tracker, bus *eventbus.Bus, _ policyclient.Client, _ *controlknobs.Knobs, interfaceName string) (ret OSConfigurator, err error) {
-	if !buildfeatures.HasDNS || distro.Get() == distro.JetKVM {
+	if !buildfeatures.HasDNS || distro.Get() == distro.JetKVM || distro.Get() == distro.Android {
 		return NewNoopManager()
 	}
 

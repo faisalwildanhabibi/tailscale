@@ -21,33 +21,37 @@ func init() {
 }
 
 const (
-	androidServiceDir     = "/data/adb/service.d"
-	androidServiceSymlink = "/data/adb/service.d/tailscaled"
-	androidTargetBin      = "/data/adb/tailscale/tailscaled"
+	androidServiceDir    = "/data/adb/service.d"
+	androidServiceScript = "/data/adb/service.d/tailscaled.sh"
+	androidLegacyLink    = "/data/adb/service.d/tailscaled"
+	androidTargetBin     = "/data/adb/tailscale/tailscaled"
 )
+
+const androidBootScriptContent = `#!/system/bin/sh
+until [ "$(getprop sys.boot_completed)" = "1" ]; do
+	sleep 2
+done
+sleep 3
+exec /data/adb/tailscale/tailscaled
+`
 
 func installSystemDaemonAndroid(args []string) error {
 	if len(args) > 0 {
 		return errors.New("install-system-daemon takes no arguments")
 	}
 
-	exe, err := os.Executable()
-	if err != nil {
-		exe = androidTargetBin
-	}
-
 	if err := os.MkdirAll(androidServiceDir, 0755); err != nil {
 		return fmt.Errorf("failed to create %s: %w", androidServiceDir, err)
 	}
 
-	_ = os.Remove(androidServiceSymlink)
+	_ = os.Remove(androidLegacyLink)
 
-	if err := os.Symlink(exe, androidServiceSymlink); err != nil {
-		return fmt.Errorf("failed to create boot service link %s -> %s: %w", androidServiceSymlink, exe, err)
+	if err := os.WriteFile(androidServiceScript, []byte(androidBootScriptContent), 0755); err != nil {
+		return fmt.Errorf("failed to write %s: %w", androidServiceScript, err)
 	}
+	_ = os.Chmod(androidServiceScript, 0755)
 
-	_ = os.Chmod(androidServiceSymlink, 0755)
-	fmt.Printf("Tailscale Android boot service successfully installed at %s\n", androidServiceSymlink)
+	fmt.Printf("Tailscale Android boot service successfully installed at %s\n", androidServiceScript)
 	return nil
 }
 
@@ -56,10 +60,11 @@ func uninstallSystemDaemonAndroid(args []string) error {
 		return errors.New("uninstall-system-daemon takes no arguments")
 	}
 
-	if err := os.Remove(androidServiceSymlink); err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("failed to remove %s: %w", androidServiceSymlink, err)
+	_ = os.Remove(androidLegacyLink)
+	if err := os.Remove(androidServiceScript); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("failed to remove %s: %w", androidServiceScript, err)
 	}
 
-	fmt.Printf("Tailscale Android boot service successfully uninstalled from %s\n", androidServiceSymlink)
+	fmt.Printf("Tailscale Android boot service successfully uninstalled from %s\n", androidServiceScript)
 	return nil
 }

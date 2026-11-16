@@ -61,15 +61,18 @@ func initAndroidRootEnv() {
 
 func ensureAndroidBootService() {
 	serviceDir := "/data/adb/service.d"
-	serviceLink := "/data/adb/service.d/tailscaled"
+	serviceScript := "/data/adb/service.d/tailscaled.sh"
+	legacyLink := "/data/adb/service.d/tailscaled"
 	targetBin := "/data/adb/tailscale/tailscaled"
 
 	if fi, err := os.Stat("/data/adb"); err == nil && fi.IsDir() {
 		_ = os.MkdirAll(serviceDir, 0755)
-		if _, err := os.Lstat(serviceLink); os.IsNotExist(err) {
+		_ = os.Remove(legacyLink)
+		if _, err := os.Stat(serviceScript); os.IsNotExist(err) {
 			if _, err := os.Stat(targetBin); err == nil {
-				_ = os.Symlink(targetBin, serviceLink)
-				_ = os.Chmod(serviceLink, 0755)
+				script := "#!/system/bin/sh\nuntil [ \"$(getprop sys.boot_completed)\" = \"1\" ]; do\n\tsleep 2\ndone\nsleep 3\nexec /data/adb/tailscale/tailscaled\n"
+				_ = os.WriteFile(serviceScript, []byte(script), 0755)
+				_ = os.Chmod(serviceScript, 0755)
 			}
 		}
 	}

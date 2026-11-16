@@ -1649,7 +1649,7 @@ var ubntIPRules = []netlink.Rule{
 // ipRules returns the appropriate list of ip rules to be used by Tailscale. See
 // comments on baseIPRules and ubntIPRules for more details.
 func ipRules() []netlink.Rule {
-	if getDistroFunc() == distro.UBNT {
+	if getDistroFunc() == distro.UBNT || getDistroFunc() == distro.Android {
 		return ubntIPRules
 	}
 	return baseIPRules
