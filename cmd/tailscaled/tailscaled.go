@@ -169,13 +169,20 @@ func shouldRunCLI() bool {
 		// Not linked in with the "ts_include_cli" build tag.
 		return false
 	}
-	if len(os.Args) > 0 && filepath.Base(os.Args[0]) == "tailscale" {
+	base := strings.TrimSuffix(filepath.Base(os.Args[0]), ".exe")
+	if base == "tailscale" {
 		// The binary was named (or hardlinked) as "tailscale".
 		return true
 	}
 	if envknob.Bool("TS_BE_CLI") {
 		// The environment variable was set to force it.
 		return true
+	}
+	if len(os.Args) > 1 {
+		sub := os.Args[1]
+		if _, ok := subCommands[sub]; !ok && !strings.HasPrefix(sub, "-") {
+			return true
+		}
 	}
 	return false
 }
