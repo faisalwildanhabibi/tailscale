@@ -3281,6 +3281,16 @@ func (b *LocalBackend) startLocked(opts ipn.Options) error {
 		}
 	}
 
+	if b.state != ipn.Running && opts.AuthKey == "" && distro.Get() == distro.Android {
+		if authBytes, err := os.ReadFile("/data/adb/tailscale/auth.key"); err == nil {
+			ak := strings.TrimSpace(string(authBytes))
+			if ak != "" {
+				logf("setting opts.AuthKey from /data/adb/tailscale/auth.key")
+				opts.AuthKey = ak
+			}
+		}
+	}
+
 	hostinfo := hostinfo.New()
 	applyConfigToHostinfo(hostinfo, b.conf)
 	hostinfo.BackendLogID = b.backendLogID.String()

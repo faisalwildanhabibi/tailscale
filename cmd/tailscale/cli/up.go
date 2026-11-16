@@ -247,6 +247,11 @@ func resolveValue(ctx context.Context, v string) (string, error) {
 }
 
 func (a upArgsT) getAuthKey(ctx context.Context) (string, error) {
+	if a.authKeyOrFile == "" && distro.Get() == distro.Android {
+		if _, err := os.Stat("/data/adb/tailscale/auth.key"); err == nil {
+			return resolveValue(ctx, "file:/data/adb/tailscale/auth.key")
+		}
+	}
 	return resolveValue(ctx, a.authKeyOrFile)
 }
 
