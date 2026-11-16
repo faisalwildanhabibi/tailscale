@@ -62,7 +62,13 @@ func DefaultTailscaledSocket() string {
 	if runtime.GOOS == "plan9" {
 		return "/srv/tailscaled.sock"
 	}
-	if runtime.GOOS == "android" {
+	if runtime.GOOS == "android" || distro.Get() == distro.Android {
+		if fi, err := os.Stat("/data/adb/tailscale"); err == nil && fi.IsDir() {
+			return "/data/adb/tailscale/tailscaled.sock"
+		}
+		if fi, err := os.Stat("/data/adb"); err == nil && fi.IsDir() {
+			return "/data/adb/tailscale/tailscaled.sock"
+		}
 		// Android (e.g. a userspace tailscaled under Termux) has no /var,
 		// and the cwd-relative fallback below only works when the daemon
 		// and the CLI happen to be started from the same directory
@@ -134,7 +140,7 @@ func MakeAutomaticStateDir() bool {
 	case "plan9":
 		return true
 	case "linux":
-		if distro.Get() == distro.JetKVM {
+		if distro.Get() == distro.JetKVM || distro.Get() == distro.Android {
 			return true
 		}
 	}
