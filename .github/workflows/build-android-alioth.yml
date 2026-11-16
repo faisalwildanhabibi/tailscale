@@ -1,0 +1,55 @@
+name: Build Tailscale Android Alioth
+
+on:
+  push:
+    branches:
+      - android-alioth
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+          check-latest: true
+
+      - name: Build tailscaled (pruned & optimized for Android root)
+        env:
+          CGO_ENABLED: 0
+          GOOS: linux
+          GOARCH: arm64
+        run: |
+          mkdir -p build
+          go build -trimpath \
+            -tags ts_omit_ssh,ts_omit_bird,ts_omit_tpm,ts_omit_aws,ts_omit_taildrop,ts_omit_kube,ts_omit_webclient \
+            -ldflags="-s -w" \
+            -o build/tailscaled \
+            ./cmd/tailscaled
+
+      - name: Build tailscale CLI
+        env:
+          CGO_ENABLED: 0
+          GOOS: linux
+          GOARCH: arm64
+        run: |
+          go build -trimpath \
+            -ldflags="-s -w" \
+            -o build/tailscale \
+            ./cmd/tailscale
+
+      - name: Check binary sizes
+        run: |
+          ls -lh build/
+          file build/tailscaled build/tailscale
+
+      - name: Upload binaries as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tailscale-alioth-arm64
+          path: build/

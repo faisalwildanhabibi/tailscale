@@ -238,6 +238,9 @@ func LogsDir(logf logger.Logf) string {
 		if distro.Get() == distro.JetKVM {
 			return "/userdata/tailscale/var"
 		}
+		if distro.Get() == distro.Android {
+			return "/data/adb/tailscale/state"
+		}
 		// STATE_DIRECTORY is set by systemd 240+ but we support older
 		// systems-d. For example, Ubuntu 18.04 (Bionic Beaver) is 237.
 		systemdStateDir := os.Getenv("STATE_DIRECTORY")

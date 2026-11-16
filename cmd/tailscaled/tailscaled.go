@@ -115,7 +115,7 @@ func defaultPort() uint16 {
 			return uint16(p)
 		}
 	}
-	if envknob.GOOS() == "windows" {
+	if envknob.GOOS() == "windows" || distro.Get() == distro.Android {
 		return 41641
 	}
 	return 0
@@ -197,7 +197,24 @@ var loadSyspolicy feature.Hook[func()]
 // started by hookOutboundProxyListen.
 type proxyStartFunc = func(logf logger.Logf, dialer *tsdial.Dialer)
 
+func initAndroidRootEnv() {
+	if distro.Get() != distro.Android {
+		return
+	}
+	if os.Getenv("SSL_CERT_DIR") == "" {
+		if _, err := os.Stat("/system/etc/security/cacerts"); err == nil {
+			os.Setenv("SSL_CERT_DIR", "/system/etc/security/cacerts")
+		}
+	}
+	if os.Getenv("SSL_CERT_FILE") == "" {
+		if _, err := os.Stat("/data/adb/tailscale/cacert.pem"); err == nil {
+			os.Setenv("SSL_CERT_FILE", "/data/adb/tailscale/cacert.pem")
+		}
+	}
+}
+
 func main() {
+	initAndroidRootEnv()
 	envknob.PanicIfAnyEnvCheckedInInit()
 	if shouldRunCLI() {
 		beCLI()
