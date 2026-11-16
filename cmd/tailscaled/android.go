@@ -54,7 +54,9 @@ func initAndroidRootEnv() {
 	}
 
 	ensureAndroidBootService()
-	setupAndroidLogging()
+	if !shouldRunCLI() {
+		setupAndroidLogging()
+	}
 }
 
 func ensureAndroidBootService() {
